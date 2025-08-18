@@ -46,13 +46,6 @@ jobs:
                  --delete-destination true
                done
           
-         # az storage blob sync \
-         #   --account-name ${{ vars.AZURE_STORAGE_ACCOUNT }} \
-         #   --container ${{ vars.AZURE_STORAGE_CONTAINER }} \
-         #   --source ./folder1 \
-         #   --destination folder1 \
-         #   --auth-mode login \
-         #   --delete-destination true
 
       #- name: Sync folder2 → container/prefix folder2/
       #  run: |
