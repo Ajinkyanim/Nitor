@@ -1,0 +1,46 @@
+name: Sync repo → Azure Storage (after PR merge)
+
+on:
+  push:
+    branches: [ main ]     # runs when a PR is merged to main
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # Ensure folders exist so 'sync' can delete remote when local is empty
+      #- name: Ensure folders exist
+      #  run: |
+      #    mkdir -p folder1 folder2
+
+      - name: Sync folder1 → container/prefix folder1/
+        run: |
+          az storage blob sync \
+            --account-name ${{ vars.AZURE_STORAGE_ACCOUNT }} \
+            --container ${{ vars.AZURE_STORAGE_CONTAINER }} \
+            --source ./folder1 \
+            --destination folder1 \
+            --auth-mode login \
+            --delete-destination true
+
+      #- name: Sync folder2 → container/prefix folder2/
+      #  run: |
+      #    az storage blob sync \
+      #      --account-name ${{ vars.AZURE_STORAGE_ACCOUNT }} \
+      #      --container ${{ vars.AZURE_STORAGE_CONTAINER }} \
+      #      --source ./folder2 \
+      #      --destination folder2 \
+      #      --auth-mode login \
+      #      --delete-destination true
