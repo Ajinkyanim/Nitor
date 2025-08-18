@@ -27,6 +27,8 @@ jobs:
 
       - name: Sync folder1 → container/prefix folder1/
         run: |
+              mkdir filtered
+              
               for dir in */ ; do
               folder=$(basename "$dir")
 
@@ -34,14 +36,18 @@ jobs:
                if [[ "$folder" == ".git" || "$folder" == ".github" ]]; then
                  continue
                fi
-            
+              
+               mkdir -p "filtered/$folder"
+
+               find "./$folder" -type f -name "*.txt" -exec cp --parents {} "filtered/$folder/" \;
+
                echo 'Hey there its in progress' 
 
                 az storage blob sync \
                  --account-name ${{ vars.AZURE_STORAGE_ACCOUNT }} \
                  --container ${{ vars.AZURE_STORAGE_CONTAINER }} \
                  --source "./$folder" \
-                 --destination "$folder" \
+                 --destination "filtered/$folder" \
                  --auth-mode login \
                  --delete-destination true
                done
