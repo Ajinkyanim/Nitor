@@ -1,2 +1,0 @@
-# Nitor
-For demo purpose
