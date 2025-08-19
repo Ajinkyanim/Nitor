@@ -3,7 +3,12 @@ name: Sync repo → Azure Storage (after PR merge)
 on:
   push:
     branches: [ main ]     # runs when a PR is merged to main
-
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "Enter a PR number to re-run sync"
+        required: true
+        type: string
 permissions:
   contents: read
 
@@ -14,7 +19,22 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
+        
+      - name: Override with PR commit
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          echo "Fetching merge commit for PR #${{ inputs.pr_number }}"
+          pr_commit=$(gh pr view ${{ inputs.pr_number }} --json mergeCommit --jq '.mergeCommit.oid')
+          if [ -z "$pr_commit" ]; then
+            echo "Could not find merge commit for PR #${{ inputs.pr_number }}"
+            exit 1
+          fi
+          echo "Merge commit for PR #${{ inputs.pr_number }} is: $pr_commit"
+          git fetch origin $pr_commit
+          git checkout $pr_commit
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
       - name: Azure login
         uses: azure/login@v2
         with:
