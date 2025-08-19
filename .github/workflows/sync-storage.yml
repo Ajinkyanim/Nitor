@@ -26,9 +26,7 @@ jobs:
       #    mkdir -p folder1 folder2
 
       - name: Sync folder1 → container/prefix folder1/
-        run: |
-              mkdir filtered
-              
+        run: |              
               for dir in */ ; do
               folder=$(basename "$dir")
 
@@ -36,10 +34,6 @@ jobs:
                if [[ "$folder" == ".git" || "$folder" == ".github" ]]; then
                  continue
                fi
-              
-               mkdir -p "filtered/$folder"
-
-               find "./$folder" -type f -name "*.txt" -exec cp --parents {} "filtered/$folder/" \;
 
                echo 'Hey there its in progress' 
 
@@ -47,7 +41,9 @@ jobs:
                  --account-name ${{ vars.AZURE_STORAGE_ACCOUNT }} \
                  --container ${{ vars.AZURE_STORAGE_CONTAINER }} \
                  --source "./$folder" \
-                 --destination "filtered/$folder" \
+                 --exclude-pattern "*" \
+                 --include-pattern "*.txt" \
+                 --destination "$folder" \
                  --auth-mode login \
                  --delete-destination true
                done
