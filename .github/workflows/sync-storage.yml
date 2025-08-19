@@ -54,7 +54,7 @@ jobs:
                  --container ${{ vars.AZURE_STORAGE_CONTAINER }} \
                  --source "./$folder" \
                  --include-pattern "*.txt" \
-                 --exclude-pattern "latestversion.txt" \
+                 --exclude-pattern "latest_version.txt" \
                  --auth-mode login \
                  --delete-destination true
                
