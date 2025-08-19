@@ -41,7 +41,6 @@ jobs:
                  --account-name ${{ vars.AZURE_STORAGE_ACCOUNT }} \
                  --container ${{ vars.AZURE_STORAGE_CONTAINER }} \
                  --source "./$folder" \
-                 --exclude-pattern "*" \
                  --include-pattern "*.txt" \
                  --destination "$folder" \
                  --auth-mode login \
