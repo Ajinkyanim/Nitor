@@ -2,7 +2,7 @@ name: Sync PR main to destination
 
 on:
   push:
-    branches: [ main ]     # runs when a PR is merged to main
+    branches: [ main ]     # runs when a PR is merged to mai
   workflow_dispatch:
 
 jobs:
