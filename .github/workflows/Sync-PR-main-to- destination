@@ -1,10 +1,9 @@
 name: Sync PR main to destination
 
 on:
-  pull_request:
-    types: [closed]
-    branches:
-      - main   # trigger only when PR merges into main
+  push:
+    branches: [ main ]     # runs when a PR is merged to main
+  workflow_dispatch:
 
 jobs:
   sync-to-destination:
