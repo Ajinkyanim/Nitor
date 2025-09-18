@@ -33,7 +33,7 @@ jobs:
             --title "Sync ${{ steps.branch_name.outputs.branch }} into destintaion" \
             --body "Automatically created PR to sync ${{ steps.branch_name.outputs.branch }} into destination after merging into main" \
             --base destination \
-            --head ${{ github.event.pull_request.head.ref }}
+            --head main
 
       - name: Auto-approve PR
         env:
