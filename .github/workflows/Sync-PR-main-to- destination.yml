@@ -27,7 +27,7 @@ jobs:
         
       - name: Create PR into destination
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUBPAT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh pr create \
             --title "Sync ${{ steps.branch_name.outputs.branch }} into destintaion" \
