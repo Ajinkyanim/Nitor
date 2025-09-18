@@ -17,9 +17,8 @@ jobs:
 
       - name: Get feature branch name
         id: branch_name
-        run:  BRANCH_NAME="${GITHUB_REF#refs/heads/}"
-              echo "Original branch- $GITHUB_REF"
-              echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+        run:  echo "Original branch- $GITHUB_REF"
+              echo "BRANCH_NAME=$GITHUB_REF" >> $GITHUB_ENV
              
       - name: Debug branch name
         run:  echo "Branch is $BRANCH_NAME"
