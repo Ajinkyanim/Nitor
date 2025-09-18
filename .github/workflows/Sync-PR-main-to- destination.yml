@@ -20,6 +20,7 @@ jobs:
         run: | 
              echo $GITHUB_REF
              echo "Sanitized branch is $GITHUB_REF"
+             echo "sanitized_branch_name=$GITHUB_REF" >> $GITHUB_OUTPUT
              
       - name: Debug branch name
         run:  echo "Sanitized branch is ${{ steps.branch_name.outputs.sanitized_branch_name }}"
