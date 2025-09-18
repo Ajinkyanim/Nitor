@@ -17,7 +17,7 @@ jobs:
 
       - name: Get feature branch name
         id: branch_name
-        run: BRANCH_NAME=${GITHUB_REF}
+        run: echo $GITHUB_REF
             echo "Sanitized branch is $BRANCH_NAME" 
             BRANCH_NAME=${GITHUB_REF}
             echo "sanitized_branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
