@@ -17,8 +17,8 @@ jobs:
 
       - name: Get feature branch name
         id: branch_name
-        run: branchName=${GITHUB_REF#refs/heads}
-            echo $branchName
+        run:  BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+              echo "Original branch- $BRANCH_NAME"
       - name: Debug branch name
         run: echo "${{ steps.branch_name.outputs.branch }}
         
