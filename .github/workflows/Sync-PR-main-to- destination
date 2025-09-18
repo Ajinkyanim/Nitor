@@ -1,0 +1,60 @@
+name: Sync PR main to destination
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main   # trigger only when PR merges into main
+
+jobs:
+  sync-to-destination:
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # fetch full history
+
+      - name: Get feature branch name
+        id: branch_name
+        run: echo "branch=${{ github.event.pull_request.head.ref }}" >> $GITHUB_OUTPUT
+
+      - name: Create PR into destination
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUBPAT }}
+        run: |
+          gh pr create \
+            --title "Sync ${{ steps.branch_name.outputs.branch }} into destintaion" \
+            --body "Automatically created PR to sync ${{ steps.branch_name.outputs.branch }} into destination after merging into main" \
+            --base destination \
+            --head ${{ steps.branch_name.outputs.branch }}
+
+      - name: Auto-approve PR
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUBPAT }}
+        run: |
+          PR_NUMBER=$(gh pr list \
+            --head "${{ steps.branch_name.outputs.branch }}" \
+            --base v4.1 \
+            --state open \
+            --json number -q '.[0].number')
+          echo $PR_NUMBER
+          if [ -n "$PR_NUMBER" ]; then
+            gh pr review --approve --body "Auto-approved sync PR" "$PR_NUMBER"
+          fi
+
+      - name: Auto-merge PR
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUBPAT }}
+        run: |
+          PR_NUMBER=$(gh pr list \
+            --head "${{ steps.branch_name.outputs.branch }}" \
+            --base destination \
+            --state open \
+            --json number -q '.[0].number')
+
+          if [ -n "$PR_NUMBER" ]; then
+            gh pr merge --squash --admin "$PR_NUMBER"
+          fi
