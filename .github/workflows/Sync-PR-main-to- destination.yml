@@ -17,10 +17,10 @@ jobs:
 
       - name: Get feature branch name
         id: branch_name
-        run: echo "branch=${{ github.event.pull_request.head.ref }}" >> $GITHUB_OUTPUT
-
+        run: branchName=${GITHUB_REF#refs/heads}
+            echo $branchName
       - name: Debug branch name
-        run: echo "${{ steps.branch_name.outputs.branch }}"
+        run: echo "${{ steps.branch_name.outputs.branch }}
         
       - name: Debug branch name
         run: echo "${{ github.event.pull_request.head.ref }}"
