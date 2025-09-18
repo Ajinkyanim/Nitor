@@ -17,13 +17,13 @@ jobs:
 
       - name: Get feature branch name
         id: branch_name
-        run: echo "branch=${{ github.event.pull_request.head.ref }}" >> $GITHUB_OUTPUT
-
+        run: | 
+             echo $GITHUB_REF
+             echo "Sanitized branch is ${GITHUB_REF#refs/heads/}"
+             echo "sanitized_branch_name=$GITHUB_REF" >> $GITHUB_OUTPUT
+             
       - name: Debug branch name
-        run: echo "${{ steps.branch_name.outputs.branch }}"
-        
-      - name: Debug branch name
-        run: echo "${{ github.event.pull_request.head.ref }}"
+        run:  echo "Sanitized branch is ${{ steps.branch_name.outputs.sanitized_branch_name }}"
         
       - name: Create PR into destination
         env:
@@ -33,7 +33,7 @@ jobs:
             --title "Sync ${{ steps.branch_name.outputs.branch }} into destintaion" \
             --body "Automatically created PR to sync ${{ steps.branch_name.outputs.branch }} into destination after merging into main" \
             --base destination \
-            --head main
+            --head ${{ steps.branch_name.outputs.sanitized_branch_name }}
 
       - name: Auto-approve PR
         env:
