@@ -44,7 +44,7 @@ jobs:
             --base destination \
             --state open \
             --json number -q '.[0].number')
-          echo $PR_NUMBER
+          echo "PR_NUMBER=$PR_NUMBER"
           if [ -n "$PR_NUMBER" ]; then
             gh pr review --approve --body "Auto-approved sync PR" "$PR_NUMBER"
           fi
