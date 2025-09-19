@@ -55,6 +55,8 @@ jobs:
           echo "PR_SHA=$PR_SHA" >> $GITHUB_ENV
           
       - name: Debug – list all status contexts
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
         run: |
           gh api repos/${{ github.repository }}/commits/${{ env.PR_SHA }}/status \
             --jq '.statuses[].context'    
