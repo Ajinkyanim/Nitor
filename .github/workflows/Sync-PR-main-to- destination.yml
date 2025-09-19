@@ -28,17 +28,48 @@ jobs:
              
       - name: Debug branch name
         run:  echo "Sanitized branch is ${{ steps.branch_name.outputs.sanitized_branch_name }}"
-        
+     
       - name: Create PR into destination
         env:
-          GITHUB_TOKEN: ${{ secrets.My_Token }}
+          GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
         run: |
           gh pr create \
             --title "Sync ${{ steps.branch_name.outputs.branch }} into destintaion" \
             --body "Automatically created PR to sync ${{ steps.branch_name.outputs.branch }} into destination after merging into main" \
             --base destination \
             --head ${{ steps.branch_name.outputs.sanitized_branch_name }}
+      
+      - name: Wait for required checks to complete
+        env:
+            GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
+        run: |
+            PR_NUMBER=$(gh pr list --head main --base destination --state open --json number -q '.[0].number')
+            REQUIRED=("build")   
+            while true; do
+              ALL_PASSED=true
+              for check in "${REQUIRED[@]}"; do
+              STATUS=$(gh pr checks $PR_NUMBER --json contexts -q ".contexts[] | select(.context==\"$check\") | .state")
+              echo "$check: $STATUS"
+            if [ "$STATUS" != "SUCCESS" ]; then
+                ALL_PASSED=false
+            fi
+            done
 
+            if [ "$ALL_PASSED" = true ]; then
+              echo "✅ All required checks passed"
+            break
+            fi
+
+            echo "⏳ Waiting for required checks..."
+            sleep 30
+            done
+
+      - name: Debug branch name
+        run:  echo "Sanitized branch is ${{ steps.branch_name.outputs.sanitized_branch_name }}"
+
+      - name: Debug branch name
+        run:  echo "Sanitized branch is ${{ steps.branch_name.outputs.sanitized_branch_name }}"
+        
       - name: Auto-approve PR
         env:
           GITHUB_TOKEN: ${{ secrets.My_Token }}

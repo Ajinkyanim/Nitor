@@ -1,0 +1,21 @@
+name: PR Status Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
+
+jobs:
+  mandatory-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run build
+        run: |
+          echo "Running build..."
+          # Add your actual build commands here
+          # Example: make build or npm install && npm run build
+          echo "Build passed ✅"
