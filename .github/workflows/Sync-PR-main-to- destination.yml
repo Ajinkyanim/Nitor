@@ -1,13 +1,16 @@
 name: Sync PR main to destination
 
 on:
-  push:
-    branches: [ main ]     # runs when a PR is merged to ma
+  pull_request:
+    types:
+      - closed   # fires when a PR is closed (includes merged)
+    branches:
+      - main      # runs when a PR is merged to main
   workflow_dispatch:
 
 jobs:
   sync-to-destination:
-    if: github.event.pull_request.merged == true
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.base.ref, 'main')
     runs-on: ubuntu-latest
 
     steps:
