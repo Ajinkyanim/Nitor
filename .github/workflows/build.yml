@@ -22,3 +22,8 @@ jobs:
           # Add your actual build commands here
           # Example: make build or npm install && npm run build
           echo "Build passed ✅"
+      - name: Simulate long build (10 minutes)
+        run: |
+          echo "Simulating build process for 10 minutes..."
+          sleep 180
+          echo "Build simulation finished ✅"
