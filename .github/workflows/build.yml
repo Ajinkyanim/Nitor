@@ -25,5 +25,5 @@ jobs:
       - name: Simulate long build (10 minutes)
         run: |
           echo "Simulating build process for 10 minutes..."
-          sleep 180
+          sleep 80
           echo "Build simulation finished ✅"
