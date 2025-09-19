@@ -43,21 +43,32 @@ jobs:
         env:
             GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
         run: |
-            PR_NUMBER=$(gh pr list --head main --base destination --state open --json number -q '.[0].number')
-            REQUIRED=("build")   
-            while true; do
-              ALL_PASSED=true
-              for check in "${REQUIRED[@]}"; do
-              STATUS=$(gh run list --pr $PR_NUMBER --json name,status,conclusion -q ".[] | select(.name==\"$check\") | .conclusion")
+          PR_NUMBER=$(gh pr list --head main --state open --json number,headRefOid -q '.[0].number')
+          PR_SHA=$(gh pr view $PR_NUMBER --json headRefOid -q '.headRefOid')
+
+          echo "🔎 PR Number: $PR_NUMBER"
+          echo "🔎 Commit SHA: $PR_SHA"
+
+          REQUIRED=("build")  # list of required job names
+
+          while true; do
+            ALL_PASSED=true
+            for check in "${REQUIRED[@]}"; do
+              STATUS=$(gh run list \
+                --branch main \
+                --json name,conclusion,headSha \
+                -q ".[] | select(.headSha==\"$PR_SHA\" and .name==\"$check\") | .conclusion")
+
               echo "$check: $STATUS"
-            if [ "$STATUS" != "SUCCESS" ]; then
+
+              if [ "$STATUS" != "success" ]; then
                 ALL_PASSED=false
-            fi
+              fi
             done
 
             if [ "$ALL_PASSED" = true ]; then
               echo "✅ All required checks passed"
-            break
+              break
             fi
 
             echo "⏳ Waiting for required checks..."
