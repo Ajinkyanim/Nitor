@@ -42,7 +42,7 @@ jobs:
             echo "$OUTPUT"
             
             PR_NUMBER=$(echo "$OUTPUT" | grep -oE '[0-9]+$')
-            echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_OUTPUT
+            echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
 
             echo "✅ PR #$PR_NUMBER created"
       
@@ -58,37 +58,42 @@ jobs:
         env:
             GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
         run: |
-          PR_NUMBER=$(gh pr list --head main --state open --json number,headRefOid -q '.[0].number')
-          PR_SHA=$(gh pr view $PR_NUMBER --json headRefOid -q '.headRefOid')
+          echo "PR_NUMBER=$PR_NUMBER"
+          echo "PR_SHA=$PR_SHA"
 
-          echo "🔎 PR Number: $PR_NUMBER"
-          echo "🔎 Commit SHA: $PR_SHA"
+          REQUIRED=("build")
+          MAX_WAIT=1200     # 20 minutes
+          INTERVAL=30       # 30 seconds between polls
+          ELAPSED=0
 
-          REQUIRED=("Mybuild")  # list of required job names
+          while [ $ELAPSED -lt $MAX_WAIT ]; do
+          ALL_PASSED=true
+          for check in "${REQUIRED[@]}"; do
+            STATUS=$(gh run list \
+            --branch destination \
+            --json name,conclusion,headSha \
+            -q ".[] | select(.headSha==\"$PR_SHA\" and .name==\"$check\") | .conclusion")
 
-          while true; do
-            ALL_PASSED=true
-            for check in "${REQUIRED[@]}"; do
-              STATUS=$(gh run list \
-                --branch main \
-                --json name,conclusion,headSha \
-                -q ".[] | select(.headSha==\"$PR_SHA\" and .name==\"$check\") | .conclusion")
+          echo "$check: ${STATUS:-pending}"
 
-              echo "$check: $STATUS"
+          if [ "$STATUS" != "success" ]; then
+            ALL_PASSED=false
+          fi
+          done
 
-              if [ "$STATUS" != "success" ]; then
-                ALL_PASSED=false
-              fi
-            done
-
-            if [ "$ALL_PASSED" = true ]; then
-              echo "✅ All required checks passed"
-              break
-            fi
-
-            echo "⏳ Waiting for required checks..."
-            sleep 30
-            done
+          if [ "$ALL_PASSED" = true ]; then
+            echo "✅ All required checks passed"
+          break
+          fi
+          echo "⏳ Waiting for checks... ($ELAPSED/$MAX_WAIT sec)"
+            sleep $INTERVAL
+            ELAPSED=$((ELAPSED + INTERVAL))
+          done
+          
+           if [ "$ALL_PASSED" != true ]; then
+            echo "❌ Required checks did not pass in time"
+            exit 1
+          fi
 
       - name: Debug branch name
         run:  echo "Sanitized branch is ${{ steps.branch_name.outputs.sanitized_branch_name }}"
