@@ -2,11 +2,12 @@ name: Sync PR main to destination
 
 on:
   push:
-    branches: [ main ]     # runs when a PR is merged to mai
+    branches: [ main ]     # runs when a PR is merged to ma
   workflow_dispatch:
 
 jobs:
   sync-to-destination:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
     steps:
