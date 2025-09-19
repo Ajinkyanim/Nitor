@@ -54,6 +54,10 @@ jobs:
           echo "✅ PR_SHA #$PR_SHA "
           echo "PR_SHA=$PR_SHA" >> $GITHUB_ENV
           
+      - name: Debug – list all status contexts
+        run: |
+          gh api repos/${{ github.repository }}/commits/${{ env.PR_SHA }}/status \
+            --jq '.statuses[].context'    
       - name: Wait for required checks to complete
         env:
             GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
