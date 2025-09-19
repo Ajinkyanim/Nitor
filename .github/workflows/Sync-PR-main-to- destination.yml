@@ -29,7 +29,15 @@ jobs:
       - name: Debug branch name
         run:  echo "Sanitized branch is ${{ steps.branch_name.outputs.sanitized_branch_name }}"
         
-     
+      - name: Create PR into destination
+        env:
+          GITHUB_TOKEN: ${{ secrets.My_Token }}
+        run: |
+          gh pr create \
+            --title "Sync ${{ steps.branch_name.outputs.branch }} into destintaion" \
+            --body "Automatically created PR to sync ${{ steps.branch_name.outputs.branch }} into destination after merging into main" \
+            --base destination \
+            --head ${{ steps.branch_name.outputs.sanitized_branch_name }}
 
       - name: Auto-approve PR
         env:
