@@ -1,11 +1,11 @@
-name: Mybuild
+name: build
 
 on:
   pull_request:
     types:
-      - closed
+      - opened      # triggers when PR is created
     branches:
-      - main
+      - destination
 
 jobs:
   mandatory-check:
