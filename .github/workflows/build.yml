@@ -3,7 +3,7 @@ name: build
 on:
   pull_request:
     types:
-      - closed
+      - opened      # triggers when PR is created
     branches:
       - destination
 
