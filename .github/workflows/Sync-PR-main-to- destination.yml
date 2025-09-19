@@ -10,7 +10,7 @@ on:
 
 jobs:
   sync-to-destination:
-    if: github.event.pull_request.merged == true
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.base.ref, 'main')
     runs-on: ubuntu-latest
 
     steps:
