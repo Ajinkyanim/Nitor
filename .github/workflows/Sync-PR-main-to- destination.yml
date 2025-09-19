@@ -1,0 +1,99 @@
+name: Sync PR main to destination
+
+on:
+  pull_request:
+    types:
+      - closed   # fires when a PR is closed (includes merged)
+    branches:
+      - main      # runs when a PR is merged to main
+  workflow_dispatch:
+
+jobs:
+  sync-to-destination:
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.base.ref, 'main')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # fetch full history
+
+      - name: Get feature branch name
+        id: branch_name
+        run: | 
+             echo $GITHUB_REF
+             echo "Sanitized branch is ${GITHUB_REF#refs/heads/}"
+             echo "sanitized_branch_name=$GITHUB_REF" >> $GITHUB_OUTPUT
+             
+      - name: Debug branch name
+        run:  echo "Sanitized branch is ${{ steps.branch_name.outputs.sanitized_branch_name }}"
+     
+      - name: Create PR into destination
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
+        run: |
+          gh pr create \
+            --title "Sync ${{ steps.branch_name.outputs.branch }} into destintaion" \
+            --body "Automatically created PR to sync ${{ steps.branch_name.outputs.branch }} into destination after merging into main" \
+            --base destination \
+            --head ${{ steps.branch_name.outputs.sanitized_branch_name }}
+      
+      - name: Wait for required checks to complete
+        env:
+            GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
+        run: |
+            PR_NUMBER=$(gh pr list --head main --base destination --state open --json number -q '.[0].number')
+            REQUIRED=("build")   
+            while true; do
+              ALL_PASSED=true
+              for check in "${REQUIRED[@]}"; do
+              STATUS=$(gh run list --pr $PR_NUMBER --json name,status,conclusion -q ".[] | select(.name==\"$check\") | .conclusion")
+              echo "$check: $STATUS"
+            if [ "$STATUS" != "SUCCESS" ]; then
+                ALL_PASSED=false
+            fi
+            done
+
+            if [ "$ALL_PASSED" = true ]; then
+              echo "✅ All required checks passed"
+            break
+            fi
+
+            echo "⏳ Waiting for required checks..."
+            sleep 30
+            done
+
+      - name: Debug branch name
+        run:  echo "Sanitized branch is ${{ steps.branch_name.outputs.sanitized_branch_name }}"
+
+      - name: Debug branch name
+        run:  echo "Sanitized branch is ${{ steps.branch_name.outputs.sanitized_branch_name }}"
+        
+      - name: Auto-approve PR
+        env:
+          GITHUB_TOKEN: ${{ secrets.My_Token }}
+        run: |
+          PR_NUMBER=$(gh pr list \
+            --head main \
+            --base destination \
+            --state open \
+            --json number -q '.[0].number')
+          echo "PR_NUMBER=$PR_NUMBER"
+          if [ -n "$PR_NUMBER" ]; then
+            gh pr review --approve --body "Auto-approved sync PR" "$PR_NUMBER"
+          fi
+
+      - name: Auto-merge PR
+        env:
+          GITHUB_TOKEN: ${{ secrets.VIVEK_TOKEN }}
+        run: |
+          PR_NUMBER=$(gh pr list \
+            --head main \
+            --base destination \
+            --state open \
+            --json number -q '.[0].number')
+
+          if [ -n "$PR_NUMBER" ]; then
+            gh pr merge --squash --admin "$PR_NUMBER"
+          fi
