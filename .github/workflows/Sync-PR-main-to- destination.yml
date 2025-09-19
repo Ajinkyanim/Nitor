@@ -58,7 +58,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
         run: |
-          gh api repos/Ajinkyanim/Nitor/commits/$PR_SHA/check-runs
+          gh api repos/Ajinkyanim/Nitor/commits/refs/pull/$PR_NUMBER/merge/check-runs
           
       - name: Wait for required checks to complete
         env:
