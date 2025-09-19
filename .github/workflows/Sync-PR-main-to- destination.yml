@@ -58,8 +58,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
         run: |
-          gh api repos/${{ github.repository }}/commits/${{ env.PR_SHA }}/status \
-            --jq '.statuses[].context'    
+          gh api repos/${{ github.repository }}/commits/${{ env.PR_SHA }}/check-runs \
+            --jq '.check-runs[].name'    
       - name: Wait for required checks to complete
         env:
             GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
