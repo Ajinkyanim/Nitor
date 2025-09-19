@@ -41,7 +41,7 @@ jobs:
 
       - name: Auto-approve PR
         env:
-          GITHUB_TOKEN: ${{ secrets.VIVEK_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.My_Token }}
         run: |
           PR_NUMBER=$(gh pr list \
             --head main \
