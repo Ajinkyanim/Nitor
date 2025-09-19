@@ -61,7 +61,7 @@ jobs:
           echo "PR_NUMBER=$PR_NUMBER"
           echo "PR_SHA=$PR_SHA"
 
-          REQUIRED=("build")
+          REQUIRED=("build / mandatory-check (pull_request)")
           MAX_WAIT=1200     # 20 minutes
           INTERVAL=30       # 30 seconds between polls
           ELAPSED=0
