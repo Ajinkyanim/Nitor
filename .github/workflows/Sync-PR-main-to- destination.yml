@@ -33,12 +33,22 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
         run: |
-          gh pr create \
+          PR_JSON=$(gh pr create \
             --title "Sync ${{ steps.branch_name.outputs.branch }} into destintaion" \
             --body "Automatically created PR to sync ${{ steps.branch_name.outputs.branch }} into destination after merging into main" \
             --base destination \
-            --head ${{ steps.branch_name.outputs.sanitized_branch_name }}
+            --head ${{ steps.branch_name.outputs.sanitized_branch_name }} \
+            --json number,url )
+            echo "$PR_JSON"
+            echo "pr_number=$(echo $PR_JSON | jq -r '.number')" >> $GITHUB_ENV
       
+      - name: Get PR SHA
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
+        run: |
+          PR_SHA=$(gh pr view $pr_number --json headRefOid -q '.headRefOid')
+          echo "pr_sha=$PR_SHA" >> $GITHUB_ENV
+          
       - name: Wait for required checks to complete
         env:
             GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
