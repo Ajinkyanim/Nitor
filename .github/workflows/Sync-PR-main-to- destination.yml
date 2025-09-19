@@ -49,7 +49,7 @@ jobs:
           echo "🔎 PR Number: $PR_NUMBER"
           echo "🔎 Commit SHA: $PR_SHA"
 
-          REQUIRED=("build")  # list of required job names
+          REQUIRED=("Mybuild")  # list of required job names
 
           while true; do
             ALL_PASSED=true
