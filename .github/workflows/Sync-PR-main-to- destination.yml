@@ -53,6 +53,14 @@ jobs:
           PR_SHA=$(gh pr view $pr_number --json headRefOid -q '.headRefOid')
           echo "✅ PR_SHA #$PR_SHA "
           echo "PR_SHA=$PR_SHA" >> $GITHUB_ENV
+      
+      - name: Wait for destination branch status checks  - updateeeedddd
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DEST_BRANCH="destination"
+          DEST_SHA=$(gh api repos/${GITHUB_REPOSITORY}/branches/$DEST_BRANCH --jq '.commit.sha')
+          echo "Latest commit on $DEST_BRANCH: $DEST_SHA"
           
       - name: Debug – list all status contexts
         env:
