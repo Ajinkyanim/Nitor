@@ -62,6 +62,9 @@ jobs:
           sleep 30
           gh api repos/Ajinkyanim/Nitor/commits/$PR_SHA/status \
           --jq '.statuses[].context'
+          echo "--->>>"
+          gh api repos/<owner>/<repo>/commits/$PR_SHA/check-runs \
+          --jq '.check_runs[] | {name, status, conclusion}'
           
       - name: Wait for required checks to complete
         env:
