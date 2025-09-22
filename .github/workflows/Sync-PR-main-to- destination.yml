@@ -76,7 +76,7 @@ jobs:
         run: |
           echo "PR_NUMBER=$PR_NUMBER"
           echo "PR_SHA=$PR_SHA"
-          REQUIRED_CHECKS=("mandatory-check")  # your mandatory checks
+          REQUIRED_CHECKS=("mandatory-check,mandatory-check2")  # your mandatory checks
           
           MAX_WAIT=1200  # in seconds
           SLEEP_INTERVAL=30
@@ -95,13 +95,13 @@ jobs:
               if [ "$STATUS" != "completed" ]; then
                 ALL_DONE=false
               elif [ "$CONCLUSION" != "success" ]; then
-                echo "❌ Check $check failed!"
+                echo "Check $check failed!"
                 exit 1
               fi
             done
           
             if [ "$ALL_DONE" = true ]; then
-              echo "✅ All mandatory checks passed!"
+              echo "All mandatory checks passed!..!!"
               break
             fi
           
