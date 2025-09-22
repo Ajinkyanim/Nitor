@@ -76,7 +76,7 @@ jobs:
         run: |
           echo "PR_NUMBER=$PR_NUMBER"
           echo "PR_SHA=$PR_SHA"
-          REQUIRED_CHECKS=("mandatory-check" "mandatory-check2")  # mandatory checks
+          REQUIRED_CHECKS=("mandatory-check" "mandatory-check2" "mandatory-check3")  # mandatory checks
           declare -A STATUS_ARRAY
           declare -A CONCLUSION_ARRAY
       
