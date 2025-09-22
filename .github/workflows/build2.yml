@@ -1,0 +1,28 @@
+name: build
+
+on:
+  pull_request:
+    types:
+      - opened      # triggers when PR is created
+    branches:
+      - destination
+
+jobs:
+  mandatory-check2:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run build
+        run: |
+          echo "Running build..."
+          # Add your actual build commands here
+          # Example: make build or npm install && npm run build
+          echo "Build passed ✅"
+      - name: Simulate long build (10 minutes)
+        run: |
+          echo "Simulating build process for 10 minutes..."
+          sleep 80
+          echo "Build simulation finished ✅"
