@@ -54,13 +54,6 @@ jobs:
           echo "✅ PR_SHA #$PR_SHA "
           echo "PR_SHA=$PR_SHA" >> $GITHUB_ENV
       
-      - name: Wait for destination branch status checks  - updateeeedddd
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          DEST_BRANCH="destination"
-          DEST_SHA=$(gh api repos/${GITHUB_REPOSITORY}/branches/$DEST_BRANCH --jq '.commit.sha')
-          echo "Latest commit on $DEST_BRANCH: $DEST_SHA"
           
       - name: Debug – list all status contexts
         env:
@@ -76,40 +69,39 @@ jobs:
           echo "PR_NUMBER=$PR_NUMBER"
           echo "PR_SHA=$PR_SHA"
 
-          REQUIRED=("build / mandatory-check (pull_request)")
-          MAX_WAIT=1200     # 20 minutes
-          INTERVAL=30       # 30 seconds between polls
-          ELAPSED=0
+          echo "⏳ Waiting for status checks on commit: $PR_SHA"
 
-          while [ $ELAPSED -lt $MAX_WAIT ]; do
-          ALL_PASSED=true
-          for check in "${REQUIRED[@]}"; do
-            STATUS=$(gh run list \
-            --branch destination \
-            --json name,conclusion,headSha \
-            -q ".[] | select(.headSha==\"$PR_SHA\" and .name==\"$check\") | .conclusion")
+          for i in {1..40}; do   # 40 * 30s = 20 mins
+            # Grab all statuses for this commit
+            JSON=$(gh api repos/${{ github.repository }}/commits/$PR_SHA/status)
 
-          echo "$check: ${STATUS:-pending}"
+            # Extract states
+            STATES=$(echo "$JSON" | jq -r '.statuses[].state')
+            CONTEXTS=$(echo "$JSON" | jq -r '.statuses[].context')
 
-          if [ "$STATUS" != "success" ]; then
-            ALL_PASSED=false
-          fi
-          done
+            echo "🔍 Status checks:"
+            paste <(echo "$CONTEXTS") <(echo "$STATES")
 
-          if [ "$ALL_PASSED" = true ]; then
-            echo "✅ All required checks passed"
-          break
-          fi
-          echo "⏳ Waiting for checks... ($ELAPSED/$MAX_WAIT sec)"
-            sleep $INTERVAL
-            ELAPSED=$((ELAPSED + INTERVAL))
-          done
-          
-           if [ "$ALL_PASSED" != true ]; then
-            echo "❌ Required checks did not pass in time"
+            # If any check is "pending" or "null", wait more
+            if echo "$STATES" | grep -qE 'pending|null'; then
+              echo "⏳ Checks still running... retrying"
+              sleep 30
+              continue
+            fi
+
+            # If all are "success", we’re good
+            if ! echo "$STATES" | grep -qv success; then
+              echo "✅ All status checks passed"
+              exit 0
+            fi
+
+            # If we reach here → at least one failed
+            echo "❌ Some status checks failed"
             exit 1
-          fi
+          done
 
+          echo "⏰ Timeout – checks didn’t finish in 20 min"
+          exit 1
       - name: Debug branch name
         run:  echo "Sanitized branch is ${{ steps.branch_name.outputs.sanitized_branch_name }}"
 
