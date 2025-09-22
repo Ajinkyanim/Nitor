@@ -96,12 +96,12 @@ jobs:
           echo "⏳ Attempt $attempt/$MAX_ATTEMPTS: Waiting for required checks..."
           sleep $SLEEP_INTERVAL
           attempt=$((attempt+1))
-        done
+          done
     
-        if [ "$ALL_PASSED" != true ]; then
-          echo "❌ Some required status checks did not complete in time. Exiting."
-          exit 1
-        fi
+          if [ "$ALL_PASSED" != true ]; then
+            echo "❌ Some required status checks did not complete in time. Exiting."
+            exit 1
+          fi
       - name: Debug branch name
         run:  echo "Sanitized branch is ${{ steps.branch_name.outputs.sanitized_branch_name }}"
 
