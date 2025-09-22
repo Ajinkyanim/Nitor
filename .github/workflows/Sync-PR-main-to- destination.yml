@@ -69,7 +69,7 @@ jobs:
           echo "PR_NUMBER=$PR_NUMBER"
           echo "PR_SHA=$PR_SHA"
 
-          REQUIRED=("build / mandatory-check (pull_request)") # put your status check names here
+          REQUIRED=("mandatory-check") # put your status check names here
 
           MAX_ATTEMPTS=$((MAX_WAIT_MINUTES * 2))  # poll every 30 seconds
           attempt=1
