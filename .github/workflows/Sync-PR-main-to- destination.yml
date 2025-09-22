@@ -50,7 +50,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
         run: |
-          PR_SHA=$(gh pr view $pr_number --json headRefOid -q '.headRefOid')
+          PR_SHA=$(gh pr view $PR_NUMBER --json headRefOid -q '.headRefOid')
           echo "✅ PR_SHA #$PR_SHA "
           echo "✅ PR_SHA #$GITHUB_REPOSITORY "
           echo "PR_SHA=$PR_SHA" >> $GITHUB_ENV
