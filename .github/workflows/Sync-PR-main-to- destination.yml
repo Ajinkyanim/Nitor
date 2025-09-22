@@ -52,6 +52,7 @@ jobs:
         run: |
           PR_SHA=$(gh pr view $pr_number --json headRefOid -q '.headRefOid')
           echo "✅ PR_SHA #$PR_SHA "
+          echo "✅ PR_SHA #$GITHUB_REPOSITORY "
           echo "PR_SHA=$PR_SHA" >> $GITHUB_ENV
       
           
@@ -60,7 +61,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
         run: |
           sleep 30
-          gh api repos/Ajinkyanim/Nitor/commits/$PR_SHA/status \
+          gh api repos/Ajinkyanim/$GITHUB_REPOSITORY/$PR_SHA/status \
           --jq '.statuses[].context'
       - name: Debug – list all status contexts --2
         env:
@@ -89,9 +90,9 @@ jobs:
       
             # loop through each mandatory check
             for check in "${REQUIRED_CHECKS[@]}"; do
-              STATUS_ARRAY[$check]=$(gh api repos/Ajinkyanim/Nitor/commits/$PR_SHA/check-runs \
+              STATUS_ARRAY[$check]=$(gh api repos/$GITHUB_REPOSITORY/commits/$PR_SHA/check-runs \
                 --jq ".check_runs[] | select(.name==\"$check\") | .status")
-              CONCLUSION_ARRAY[$check]=$(gh api repos/Ajinkyanim/Nitor/commits/$PR_SHA/check-runs \
+              CONCLUSION_ARRAY[$check]=$(gh api repos/$GITHUB_REPOSITORY/commits/$PR_SHA/check-runs \
                 --jq ".check_runs[] | select(.name==\"$check\") | .conclusion")
       
               echo "$check: status=${STATUS_ARRAY[$check]}, conclusion=${CONCLUSION_ARRAY[$check]}"
