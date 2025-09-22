@@ -61,7 +61,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
         run: |
           sleep 30
-          gh api repos/Ajinkyanim/$GITHUB_REPOSITORY/$PR_SHA/status \
+          gh api repos/$GITHUB_REPOSITORY/commits/$PR_SHA/status \
           --jq '.statuses[].context'
       - name: Debug – list all status contexts --2
         env:
