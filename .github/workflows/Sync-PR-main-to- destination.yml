@@ -59,12 +59,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
         run: |
-          sleep 120
+          sleep 30
           gh api repos/Ajinkyanim/Nitor/commits/$PR_SHA/status
           
       - name: Wait for required checks to complete
         env:
             GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
+            MAX_WAIT_MINUTES: 20
         run: |
           echo "PR_NUMBER=$PR_NUMBER"
           echo "PR_SHA=$PR_SHA"
