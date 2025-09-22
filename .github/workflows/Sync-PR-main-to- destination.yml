@@ -76,39 +76,47 @@ jobs:
         run: |
           echo "PR_NUMBER=$PR_NUMBER"
           echo "PR_SHA=$PR_SHA"
-          REQUIRED_CHECKS=("mandatory-check","mandatory-check2")  # your mandatory checks
-          
-          MAX_WAIT=1200  # in seconds
+          REQUIRED_CHECKS=("mandatory-check" "mandatory-check2")  # mandatory checks
+          declare -A STATUS_ARRAY
+          declare -A CONCLUSION_ARRAY
+      
+          MAX_WAIT=1200  # seconds
           SLEEP_INTERVAL=30
           ELAPSED=0
-          
+      
           while [ $ELAPSED -lt $MAX_WAIT ]; do
             ALL_DONE=true
+      
+            # loop through each mandatory check
             for check in "${REQUIRED_CHECKS[@]}"; do
-             
-             RESULT=$(gh api repos/Ajinkyanim/Nitor/commits/$PR_SHA/check-runs \
-            --jq ".check_runs[] | select(.name==\"$check\") | {status: .status, conclusion: .conclusion}")
-  
-              STATUS=$(echo "$RESULT" | jq -r '.status')
-              CONCLUSION=$(echo "$RESULT" | jq -r '.conclusion')
-
-          
-              if [ "$STATUS" != "completed" ]; then
+              STATUS_ARRAY[$check]=$(gh api repos/Ajinkyanim/Nitor/commits/$PR_SHA/check-runs \
+                --jq ".check_runs[] | select(.name==\"$check\") | .status")
+              CONCLUSION_ARRAY[$check]=$(gh api repos/Ajinkyanim/Nitor/commits/$PR_SHA/check-runs \
+                --jq ".check_runs[] | select(.name==\"$check\") | .conclusion")
+      
+              echo "$check: status=${STATUS_ARRAY[$check]}, conclusion=${CONCLUSION_ARRAY[$check]}"
+      
+              if [ "${STATUS_ARRAY[$check]}" != "completed" ]; then
                 ALL_DONE=false
-              elif [ "$CONCLUSION" != "success" ]; then
+              elif [ "${CONCLUSION_ARRAY[$check]}" != "success" ]; then
                 echo "Check $check failed!"
                 exit 1
               fi
             done
-          
+      
             if [ "$ALL_DONE" = true ]; then
-              echo "All mandatory checks passed!..!!"
+              echo "All mandatory checks passed!"
               break
             fi
-          
+      
             sleep $SLEEP_INTERVAL
             ELAPSED=$((ELAPSED + SLEEP_INTERVAL))
           done
+      
+          if [ "$ALL_DONE" != true ]; then
+            echo "Timeout reached. Some checks did not complete."
+            exit 1
+          fi
 
         
       - name: Debug branch name
