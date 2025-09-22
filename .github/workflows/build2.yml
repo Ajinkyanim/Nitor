@@ -14,7 +14,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+      - name: Force fail pipeline
+        run: |
+          echo "❌ Failing this pipeline intentionally..."
+          exit 1
       - name: Run build
         run: |
           echo "Running build..."
