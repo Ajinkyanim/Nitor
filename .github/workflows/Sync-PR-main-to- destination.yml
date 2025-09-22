@@ -69,39 +69,38 @@ jobs:
           echo "PR_NUMBER=$PR_NUMBER"
           echo "PR_SHA=$PR_SHA"
 
-          echo "⏳ Waiting for status checks on commit: $PR_SHA"
+          REQUIRED=("build / mandatory-check (pull_request)") # put your status check names here
 
-          for i in {1..40}; do   # 40 * 30s = 20 mins
-            # Grab all statuses for this commit
-            JSON=$(gh api repos/${{ github.repository }}/commits/$PR_SHA/status)
-
-            # Extract states
-            STATES=$(echo "$JSON" | jq -r '.statuses[].state')
-            CONTEXTS=$(echo "$JSON" | jq -r '.statuses[].context')
-
-            echo "🔍 Status checks:"
-            paste <(echo "$CONTEXTS") <(echo "$STATES")
-
-            # If any check is "pending" or "null", wait more
-            if echo "$STATES" | grep -qE 'pending|null'; then
-              echo "⏳ Checks still running... retrying"
-              sleep 30
-              continue
+          MAX_ATTEMPTS=$((MAX_WAIT_MINUTES * 2))  # poll every 30 seconds
+          attempt=1
+      
+          while [ $attempt -le $MAX_ATTEMPTS ]; do
+            ALL_PASSED=true
+      
+            for check in "${REQUIRED[@]}"; do
+              STATUS=$(gh api repos/${GITHUB_REPOSITORY}/commits/$PR_SHA/status \
+                --jq ".statuses[] | select(.context==\"$check\") | .state" | tr -d '"')
+              echo "Check '$check' status: $STATUS"
+      
+              if [ "$STATUS" != "success" ]; then
+                ALL_PASSED=false
+              fi
+            done
+      
+            if [ "$ALL_PASSED" = true ]; then
+              echo "✅ All required status checks passed"
+              break
             fi
-
-            # If all are "success", we’re good
-            if ! echo "$STATES" | grep -qv success; then
-              echo "✅ All status checks passed"
-              exit 0
-            fi
-
-            # If we reach here → at least one failed
-            echo "❌ Some status checks failed"
-            exit 1
+      
+            echo "⏳ Attempt $attempt/$MAX_ATTEMPTS: Waiting for required checks to complete..."
+            sleep 30
+            attempt=$((attempt+1))
           done
-
-          echo "⏰ Timeout – checks didn’t finish in 20 min"
-          exit 1
+      
+          if [ "$ALL_PASSED" != true ]; then
+            echo "❌ Required status checks did not complete successfully within $MAX_WAIT_MINUTES minutes"
+            exit 1
+          fi
       - name: Debug branch name
         run:  echo "Sanitized branch is ${{ steps.branch_name.outputs.sanitized_branch_name }}"
 
