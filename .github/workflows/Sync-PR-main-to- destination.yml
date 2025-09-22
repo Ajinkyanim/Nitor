@@ -85,12 +85,13 @@ jobs:
           while [ $ELAPSED -lt $MAX_WAIT ]; do
             ALL_DONE=true
             for check in "${REQUIRED_CHECKS[@]}"; do
-              STATUS=$(gh api repos/Ajinkyanim/Nitor/commits/$PR_SHA/check-runs \
-                --jq ".check_runs[] | select(.name==\"$check\") | .status")
-              CONCLUSION=$(gh api repos/Ajinkyanim/Nitor/commits/$PR_SHA/check-runs \
-                --jq ".check_runs[] | select(.name==\"$check\") | .conclusion")
-          
-              echo "$check: status=$STATUS, conclusion=$CONCLUSION"
+             
+             RESULT=$(gh api repos/Ajinkyanim/Nitor/commits/$PR_SHA/check-runs \
+            --jq ".check_runs[] | select(.name==\"$check\") | {status: .status, conclusion: .conclusion}")
+  
+              STATUS=$(echo "$RESULT" | jq -r '.status')
+              CONCLUSION=$(echo "$RESULT" | jq -r '.conclusion')
+
           
               if [ "$STATUS" != "completed" ]; then
                 ALL_DONE=false
