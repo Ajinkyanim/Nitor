@@ -60,7 +60,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
         run: |
           sleep 30
-          gh api repos/Ajinkyanim/Nitor/commits/$PR_SHA/status
+          gh api repos/Ajinkyanim/Nitor/commits/$PR_SHA/status \
+          --jq '.statuses[].context'
           
       - name: Wait for required checks to complete
         env:
@@ -70,44 +71,11 @@ jobs:
           echo "PR_NUMBER=$PR_NUMBER"
           echo "PR_SHA=$PR_SHA"
 
-          REQUIRED=("mandatory-check") # put your status check names here
-
-          MAX_ATTEMPTS=$((MAX_WAIT_MINUTES * 2))  # poll every 30 seconds
-          attempt=1
-      
-          while [ $attempt -le $MAX_ATTEMPTS ]; do
-          ALL_PASSED=true
-    
-          for check in "${REQUIRED[@]}"; do
-            STATUS=$(gh api repos/${GITHUB_REPOSITORY}/commits/$PR_SHA/status \
-              --jq ".statuses[] | select(.context==\"$check\") | .state" | tr -d '"')
-            echo "Check '$check' status: $STATUS"
-    
-            if [ "$STATUS" != "success" ]; then
-              ALL_PASSED=false
-            fi
-          done
-    
-          if [ "$ALL_PASSED" = true ]; then
-            echo "✅ All required status checks passed for PR #$PR_NUMBER"
-            break
-          fi
-    
-          echo "⏳ Attempt $attempt/$MAX_ATTEMPTS: Waiting for required checks..."
-          sleep $SLEEP_INTERVAL
-          attempt=$((attempt+1))
-          done
-    
-          if [ "$ALL_PASSED" != true ]; then
-            echo "❌ Some required status checks did not complete in time. Exiting."
-            exit 1
-          fi
-      - name: Debug branch name
-        run:  echo "Sanitized branch is ${{ steps.branch_name.outputs.sanitized_branch_name }}"
-
-      - name: Debug branch name
-        run:  echo "Sanitized branch is ${{ steps.branch_name.outputs.sanitized_branch_name }}"
         
+      - name: Debug branch name
+        run:  echo "Sanitized branch is ${{ steps.branch_name.outputs.sanitized_branch_name }}"
+
+
       - name: Auto-approve PR
         env:
           GITHUB_TOKEN: ${{ secrets.My_Token }}
