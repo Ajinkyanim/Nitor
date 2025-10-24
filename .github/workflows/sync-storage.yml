@@ -23,7 +23,7 @@ jobs:
   sync-nprd:
     runs-on: ubuntu-latest
     environment: nprd
-    if: github.event_name == 'push' || github.event.inputs.target_env == 'nprd'
+    if: github.event.inputs.target_env == 'nprd'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
