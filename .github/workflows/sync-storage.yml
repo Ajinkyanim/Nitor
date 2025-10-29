@@ -95,7 +95,7 @@ jobs:
                 az storage blob sync \
                  --account-name ${{ vars.AZURE_STORAGE_ACCOUNT }} \
                  --container ${{ vars.AZURE_STORAGE_CONTAINER }} \
-                 --source "./" \
+                 --source "./Singapore_Data/" \
                  --include-pattern "*.txt" \
                  --exclude-pattern "latest_version.txt" \
                  --auth-mode login \
