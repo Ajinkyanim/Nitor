@@ -45,7 +45,30 @@ jobs:
             echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
 
             echo "✅ PR #$PR_NUMBER created"
-      
+            
+      - name: Checking if Pr is ready to merge (conflicts)
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
+        run: |
+            PR_NUMBER=$(gh pr list --head main --state open --json number,headRefOid -q '.[0].number')
+            echo "🔎 PR Number: $PR_NUMBER"
+             if [ -z "$PR_NUMBER" ]; then
+               echo "❌ No open PR found between main and destination."
+               exit 1
+            fi
+             MERGEABLE_STATE=$(gh pr view "$PR_NUMBER" --json mergeableState -q '.mergeableState')
+             echo "🔍 Mergeable state: $MERGEABLE_STATE"
+             
+             if [[ "$MERGEABLE_STATE" == "dirty" || "$MERGEABLE_STATE" == "conflicting" ]]; then
+            echo "⚠️ Merge conflicts detected in the PR. Please resolve them before merging."
+            exit 1
+            elif [[ "$MERGEABLE_STATE" == "unknown" ]]; then
+            echo "⏳ Mergeability not yet determined. Try again later."
+            exit 1
+            else
+            echo "✅ No file conflicts. Safe to proceed with merge."
+            fi
+            
       - name: Get PR SHA
         env:
           GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
