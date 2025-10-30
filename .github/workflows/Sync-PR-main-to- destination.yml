@@ -56,6 +56,7 @@ jobs:
                echo "❌ No open PR found between main and destination."
                exit 1
             fi
+            sleep 5
              MERGEABLE_STATE=$(gh pr view "$PR_NUMBER" --json mergeStateStatus -q '.mergeStateStatus')
              echo "🔍 mergeStateStatus: $MERGEABLE_STATE"
              
