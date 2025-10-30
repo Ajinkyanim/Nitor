@@ -23,7 +23,7 @@ jobs:
   sync-nprd:
     runs-on: ubuntu-latest
     environment: nprd
-    if: github.event_name == 'push' || github.event.inputs.target_env == 'nprd'
+    if: github.event.inputs.target_env == 'nprd'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -66,7 +66,9 @@ jobs:
     if: github.event_name == 'push' || github.event.inputs.target_env == 'dev'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4  
+        with:
+          ref: destination
 
       - name: Override with PR commit
         if: ${{ github.event_name == 'workflow_dispatch' }}
@@ -95,7 +97,8 @@ jobs:
                 az storage blob sync \
                  --account-name ${{ vars.AZURE_STORAGE_ACCOUNT }} \
                  --container ${{ vars.AZURE_STORAGE_CONTAINER }} \
-                 --source "./$folder" \
+                 --source "./Singapore_Data/" \
+                 --destination "Singapore_Data" \
                  --include-pattern "*.txt" \
                  --exclude-pattern "latest_version.txt" \
                  --auth-mode login \
