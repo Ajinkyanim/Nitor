@@ -68,7 +68,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4  
         with:
-          ref: destination
+          ref: main
 
       - name: Override with PR commit
         if: ${{ github.event_name == 'workflow_dispatch' }}
