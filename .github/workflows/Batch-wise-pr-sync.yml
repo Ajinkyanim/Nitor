@@ -1,0 +1,177 @@
+name: Batch-wise-pr-sync
+
+on:
+  pull_request:
+    types:
+      - closed   # fires when a PR is closed (includes merged)
+    branches:
+      - main      # runs when a PR is merged to main
+  workflow_dispatch:
+
+jobs:
+  sync-to-destination:
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.base.ref, 'main')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # fetch full history
+
+      - name: Get feature branch name
+        id: branch_name
+        run: | 
+             echo $GITHUB_REF
+             echo "Sanitized branch is ${GITHUB_REF#refs/heads/}"
+             echo "sanitized_branch_name=$GITHUB_REF" >> $GITHUB_OUTPUT
+             
+      - name: Debug branch name
+        run:  echo "Sanitized branch is ${{ steps.branch_name.outputs.sanitized_branch_name }}"
+     
+      - name: Create PR into destination
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
+        run: |
+          OUTPUT=$(gh pr create \
+            --title "Sync ${{ steps.branch_name.outputs.branch }} into destintaion" \
+            --body "Automatically created PR to sync ${{ steps.branch_name.outputs.branch }} into destination after merging into main" \
+            --base destination \
+            --head ${{ steps.branch_name.outputs.sanitized_branch_name }})
+            echo "RAW PR output:"
+            echo "$OUTPUT"
+            
+            PR_NUMBER=$(echo "$OUTPUT" | grep -oE '[0-9]+$')
+            echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
+
+            echo "✅ PR #$PR_NUMBER created"
+            
+      - name: Checking if Pr is ready to merge (conflicts)
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
+        run: |
+            PR_NUMBER=$(gh pr list --head main --state open --json number,headRefOid -q '.[0].number')
+            echo "🔎 PR Number: $PR_NUMBER"
+             if [ -z "$PR_NUMBER" ]; then
+               echo "❌ No open PR found between main and destination."
+               exit 1
+            fi
+            sleep 5
+             MERGEABLE_STATE=$(gh pr view "$PR_NUMBER" --json mergeStateStatus -q '.mergeStateStatus')
+             echo "🔍 mergeStateStatus: $MERGEABLE_STATE"
+             
+             if [[ "$MERGEABLE_STATE" == "dirty" || "$MERGEABLE_STATE" == "conflicting" ]]; then
+            echo "⚠️ Merge conflicts detected in the PR. Please resolve them before merging."
+            exit 1
+            elif [[ "$MERGEABLE_STATE" == "unknown" ]]; then
+            echo "⏳ Mergeability not yet determined. Try again later."
+            exit 1
+            else
+            echo "✅ No file conflicts. Safe to proceed with merge."
+            fi
+            
+      - name: Get PR SHA
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
+        run: |
+          PR_SHA=$(gh pr view $PR_NUMBER --json headRefOid -q '.headRefOid')
+          echo "✅ PR_SHA #$PR_SHA "
+          echo "✅ PR_SHA #$GITHUB_REPOSITORY "
+          echo "PR_SHA=$PR_SHA" >> $GITHUB_ENV
+      
+          
+      - name: Debug – list all status contexts
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
+        run: |
+          sleep 30
+          gh api repos/$GITHUB_REPOSITORY/commits/$PR_SHA/status \
+          --jq '.statuses[].context'
+      - name: Debug – list all status contexts --2
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
+        run: |
+          gh api repos/Ajinkyanim/Nitor/commits/$PR_SHA/check-runs \
+          --jq '.check_runs[] | {name, status, conclusion}'
+          
+      - name: Wait for required checks to complete
+        env:
+            GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
+            MAX_WAIT_MINUTES: 20
+        run: |
+          echo "PR_NUMBER=$PR_NUMBER"
+          echo "PR_SHA=$PR_SHA"
+          REQUIRED_CHECKS=("mandatory-check" "mandatory-check2" "mandatory-check3")  # mandatory checks
+          declare -A STATUS_ARRAY
+          declare -A CONCLUSION_ARRAY
+      
+          MAX_WAIT=1200  # seconds
+          SLEEP_INTERVAL=30
+          ELAPSED=0
+      
+          while [ $ELAPSED -lt $MAX_WAIT ]; do
+            ALL_DONE=true
+      
+            # loop through each mandatory check
+            for check in "${REQUIRED_CHECKS[@]}"; do
+              STATUS_ARRAY[$check]=$(gh api repos/$GITHUB_REPOSITORY/commits/$PR_SHA/check-runs \
+                --jq ".check_runs[] | select(.name==\"$check\") | .status")
+              CONCLUSION_ARRAY[$check]=$(gh api repos/$GITHUB_REPOSITORY/commits/$PR_SHA/check-runs \
+                --jq ".check_runs[] | select(.name==\"$check\") | .conclusion")
+      
+              echo "$check: status=${STATUS_ARRAY[$check]}, conclusion=${CONCLUSION_ARRAY[$check]}"
+      
+              if [ "${STATUS_ARRAY[$check]}" != "completed" ]; then
+                ALL_DONE=false
+              elif [ "${CONCLUSION_ARRAY[$check]}" != "success" ]; then
+                echo "Check $check failed!"
+                exit 1
+              fi
+            done
+      
+            if [ "$ALL_DONE" = true ]; then
+              echo "All mandatory checks passed!"
+              break
+            fi
+      
+            sleep $SLEEP_INTERVAL
+            ELAPSED=$((ELAPSED + SLEEP_INTERVAL))
+          done
+      
+          if [ "$ALL_DONE" != true ]; then
+            echo "Timeout reached. Some checks did not complete."
+            exit 1
+          fi
+
+        
+      - name: Debug branch name
+        run:  echo "Sanitized branch is ${{ steps.branch_name.outputs.sanitized_branch_name }}"
+
+
+      - name: Auto-approve PR
+        env:
+          GITHUB_TOKEN: ${{ secrets.My_Token }}
+        run: |
+          PR_NUMBER=$(gh pr list \
+            --head main \
+            --base destination \
+            --state open \
+            --json number -q '.[0].number')
+          echo "PR_NUMBER=$PR_NUMBER"
+          if [ -n "$PR_NUMBER" ]; then
+            gh pr review --approve --body "Auto-approved sync PR" "$PR_NUMBER"
+          fi
+
+      - name: Auto-merge PR
+        env:
+          GITHUB_TOKEN: ${{ secrets.VIVEK_TOKEN }}
+        run: |
+          PR_NUMBER=$(gh pr list \
+            --head main \
+            --base destination \
+            --state open \
+            --json number -q '.[0].number')
+
+          if [ -n "$PR_NUMBER" ]; then
+            gh pr merge --squash --admin "$PR_NUMBER"
+          fi
