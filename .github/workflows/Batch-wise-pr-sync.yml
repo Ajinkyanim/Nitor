@@ -7,7 +7,10 @@ on:
     branches:
       - main      # runs when a PR is merged to main
   workflow_dispatch:
-
+  
+  schedule:
+    - cron: "30 15 * * 4"  # every Thursday at 9:00 PM IST
+    
 jobs:
   sync-to-destination:
     if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.base.ref, 'main')
