@@ -56,9 +56,18 @@ jobs:
             SOURCE="main"
             DESTINATION="destination"
             git fetch origin $SOURCE $DESTINATION
+            
+            CHANGED_FILES=$(git diff --name-only origin/$DESTINATION..origin/$SOURCE || true)
+            echo "All changed files:"
+            echo "$CHANGED_FILES"
+
+            FILTERED=$(printf "%s\n" "$CHANGED_FILES" | grep -vE '^\.github/workflows/' || true)
+            echo "Filtered files (excluding workflows):"
+            echo "$FILTERED"
+            
             COMMITS=$(git log origin/$DESTINATION..origin/$SOURCE --oneline)
 
-            if [ -z "$COMMITS" ]; then
+            if [ -z "$FILTERED" ]; then
               echo "🚫 No new commits to create PR."
             else
               echo "✅ New commits found. Creating PR..."
