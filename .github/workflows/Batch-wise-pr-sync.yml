@@ -50,48 +50,6 @@ jobs:
             echo "exists=false" >> $GITHUB_OUTPUT
           fi
 
-
-      - name: Create PR into destination 1 from temp branch
-        env:
-          GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
-        run: |
-            SOURCE="main"
-            DESTINATION="destination"
-            SOURCE="main"
-
-            TEMP_BRANCH="sync-pr-$(date +%s)" 
-
-              git fetch origin $SOURCE $DESTINATION
-              git checkout origin/$SOURCE
-          
-              echo "🧹 Excluding unwanted files from PR..."
-              # Reset specific paths to match destination branch
-              git restore --source=origin/$DESTINATION --staged --worktree \
-                -- .github/workflows || true
-          
-              # Check if any relevant diffs remain
-              if git diff --quiet origin/$DESTINATION -- .; then
-                echo "🚫 No relevant changes (after exclusions). Skipping PR."
-                exit 0
-              fi
-          
-              echo "✅ Pushing filtered changes to temp branch..."
-              git checkout -b $TEMP_BRANCH
-              git commit -am "Sync main → destination (excluding ignored files)" || echo "No local commit"
-              git push origin $TEMP_BRANCH --force
-          
-              echo "🟢 Creating PR..."
-              OUTPUT=$(gh pr create \
-                --title "Sync main → destination (excluding ignored files)" \
-                --body "Automated PR created after filtering out ignored files (e.g., .github/workflows)" \
-                --base $DESTINATION \
-                --head $TEMP_BRANCH)
-          
-              echo "RAW PR output:"
-              echo "$OUTPUT"
-              PR_NUMBER=$(echo "$OUTPUT" | grep -oE '[0-9]+$' || true)
-              echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
-              echo "✅ PR #$PR_NUMBER created successfully."
             
       - name: Create PR into destination 2
         env:
