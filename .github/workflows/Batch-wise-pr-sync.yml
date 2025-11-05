@@ -44,7 +44,7 @@ jobs:
             echo "⚠️ Open PR already exists: #$OPEN_PR"
             echo "Skipping PR creation."
             echo "exists=true" >> $GITHUB_OUTPUT
-            exit 0
+            exit 1
           else
             echo "✅ No open PR found. Proceeding to create a new PR..."
             echo "exists=false" >> $GITHUB_OUTPUT
