@@ -10,7 +10,10 @@ on:
   
   schedule:
     - cron: "30 15 * * 4"  # every Thursday at 9:00 PM IST
-    
+env:
+  SOURCE_BRANCH: "main"
+  DESTINATION_BRANCH: "destination"
+  
 jobs:
   sync-to-destination:
     if: (github.event.pull_request.merged == true && startsWith(github.event.pull_request.base.ref, 'main')) || (github.event_name == 'workflow_dispatch')
@@ -32,13 +35,13 @@ jobs:
       - name: Debug branch name
         run:  echo "Sanitized branch is ${{ steps.branch_name.outputs.sanitized_branch_name }}"
       
-      - name: Check for existing open PR between V4.1 and V5.0
+      - name: Check for existing open PR between ${{ env.SOURCE_BRANCH }} and ${{ env.DESTINATION_BRANCH }}
         id: check_pr
         env:
           GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
         run: |
           echo "🔎 Checking for existing open PR between main → destination ..."
-          OPEN_PR=$(gh pr list --head main --base destination --state open --json number,title -q '.[0].number')
+          OPEN_PR=$(gh pr list --head "$SOURCE_BRANCH" --base "$DESTINATION_BRANCH" --state open --json number,title -q '.[0].number')
 
           if [ -n "$OPEN_PR" ]; then
             echo "⚠️ Open PR already exists: #$OPEN_PR"
@@ -51,25 +54,23 @@ jobs:
           fi
 
             
-      - name: Create PR into destination 2
+      - name: Create PR from ${{ env.SOURCE_BRANCH }} to ${{ env.DESTINATION_BRANCH }}
         env:
           GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
         run: |
-            SOURCE="main"
-            DESTINATION="destination"
-            git fetch origin $SOURCE $DESTINATION
+            git fetch origin "$SOURCE_BRANCH" "$DESTINATION_BRANCH"
             
-            COMMITS=$(git log origin/$DESTINATION..origin/$SOURCE --oneline)
+            COMMITS=$(git log origin/$DESTINATION_BRANCH..origin/$SOURCE_BRANCH --oneline)
 
             if [ -z "$COMMITS" ]; then
               echo "🚫 No new commits to create PR."
             else
               echo "✅ New commits found. Creating PR..."
               OUTPUT=$(gh pr create \
-                --title "Sync ${{ steps.branch_name.outputs.branch }} into destintaion" \
-                --body "Automatically created PR to sync ${{ steps.branch_name.outputs.branch }} into destination after merging into main" \
-                --base destination \
-                --head ${{ steps.branch_name.outputs.sanitized_branch_name }})
+                --title "Sync $SOURCE_BRANCH into $DESTINATION_BRANCH" \
+                --body "Automatically created PR to sync $SOURCE_BRANCH into $DESTINATION_BRANCH after merging into $SOURCE_BRANCH" \
+                --base "$DESTINATION_BRANCH" \
+                --head "$SOURCE_BRANCH")
                 echo "RAW PR output:"
                 echo "$OUTPUT"
                 
