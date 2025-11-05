@@ -8,13 +8,16 @@ on:
       - destination
 
 jobs:
-  mandatory-check:
+  mandatory-check2:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+      - name: Force fail pipeline
+        run: |
+          echo "❌ Failing this pipeline intentionally..."
+          exit 1
       - name: Run build
         run: |
           echo "Running build..."
@@ -24,5 +27,5 @@ jobs:
       - name: Simulate long build (10 minutes)
         run: |
           echo "Simulating build process for 10 minutes..."
-          sleep 80
+          sleep 160
           echo "Build simulation finished ✅"
