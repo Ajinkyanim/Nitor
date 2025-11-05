@@ -53,19 +53,27 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
         run: |
-          OUTPUT=$(gh pr create \
-            --title "Sync ${{ steps.branch_name.outputs.branch }} into destintaion" \
-            --body "Automatically created PR to sync ${{ steps.branch_name.outputs.branch }} into destination after merging into main" \
-            --base destination \
-            --head ${{ steps.branch_name.outputs.sanitized_branch_name }})
-            echo "RAW PR output:"
-            echo "$OUTPUT"
-            
-            PR_NUMBER=$(echo "$OUTPUT" | grep -oE '[0-9]+$')
-            echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
+            SOURCE="main"
+            DESTINATION="destination"
+            git fetch origin $SOURCE $DESTINATION
+            COMMITS=$(git log origin/$DESTINATION..origin/$SOURCE --oneline)
 
-            echo "✅ PR #$PR_NUMBER created"
-            
+            if [ -z "$COMMITS" ]; then
+              echo "🚫 No new commits to create PR."
+            else
+              echo "✅ New commits found. Creating PR..."
+              OUTPUT=$(gh pr create \
+                --title "Sync ${{ steps.branch_name.outputs.branch }} into destintaion" \
+                --body "Automatically created PR to sync ${{ steps.branch_name.outputs.branch }} into destination after merging into main" \
+                --base destination \
+                --head ${{ steps.branch_name.outputs.sanitized_branch_name }})
+                echo "RAW PR output:"
+                echo "$OUTPUT"
+                
+                PR_NUMBER=$(echo "$OUTPUT" | grep -oE '[0-9]+$')
+                echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
+                echo "✅ PR #$PR_NUMBER created"               
+            fi
       - name: Checking if Pr is ready to merge (conflicts)
         env:
           GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
