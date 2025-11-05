@@ -42,9 +42,9 @@ jobs:
 
           if [ -n "$OPEN_PR" ]; then
             echo "⚠️ Open PR already exists: #$OPEN_PR"
-            echo "Skipping PR creation."
+            echo "Closing old PR to create a new one with updated changes..."
+            gh pr close "$OPEN_PR" --delete-branch=false --comment "Closed automatically to recreate PR with latest code"
             echo "exists=true" >> $GITHUB_OUTPUT
-            exit 1
           else
             echo "✅ No open PR found. Proceeding to create a new PR..."
             echo "exists=false" >> $GITHUB_OUTPUT
