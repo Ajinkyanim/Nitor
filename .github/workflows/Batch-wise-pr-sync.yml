@@ -31,7 +31,24 @@ jobs:
              
       - name: Debug branch name
         run:  echo "Sanitized branch is ${{ steps.branch_name.outputs.sanitized_branch_name }}"
-     
+      
+      - name: Check for existing open PR between V4.1 and V5.0
+        id: check_pr
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
+        run: |
+          echo "🔎 Checking for existing open PR between main → destination ..."
+          OPEN_PR=$(gh pr list --head main --base destination --state open --json number,title -q '.[0].number')
+
+          if [ -n "$OPEN_PR" ]; then
+            echo "⚠️ Open PR already exists: #$OPEN_PR"
+            echo "Skipping PR creation."
+            echo "exists=true" >> $GITHUB_OUTPUT
+            exit 0
+          else
+            echo "✅ No open PR found. Proceeding to create a new PR..."
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
       - name: Create PR into destination
         env:
           GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
