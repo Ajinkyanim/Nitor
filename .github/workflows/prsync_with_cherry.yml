@@ -32,7 +32,7 @@ jobs:
         run: |
           echo "Commits input: '${{ github.event.inputs.commits }}'"
       
-      - name: Format commits
+      - name: Format commits (trim spaces, split by comma)
         id: format_commits
         run: |
           INPUT="${{ github.event.inputs.commits }}"
@@ -44,4 +44,6 @@ jobs:
             jq -R . cleaned.txt | jq -s . > commits.json
           fi
 
-          echo "commits_json=$(cat commits.json)" >> $GITHUB_OUTPUT
+          # IMPORTANT: produce SINGLE-LINE JSON for output
+          echo "commits_json=$(jq -c . commits.json)" >> $GITHUB_OUTPUT
+
