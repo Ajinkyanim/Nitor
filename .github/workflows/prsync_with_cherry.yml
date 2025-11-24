@@ -114,3 +114,29 @@ jobs:
              else
               echo "No existing PR found for branch: $BR"
             fi
+#================================================================================
+#================================================================================
+      - name: Cherry-pick commits
+        run: |
+              COMMITS=$(echo '${{ steps.format_commits.outputs.commits_json }}' | jq -r '.[]')
+              for c in $COMMITS; do
+                git cherry-pick "$c" || exit 1
+              done
+    
+      - name: Push branch
+        run: |
+              git commit --amend -m "Cherry-picked commits [skip ci]" || true
+              git push --force origin "${{ steps.prepare_branch.outputs.reuse_branch }}"
+    
+      - name: Create Pull Request
+        if: steps.check_pr.outcome == 'success'
+        env:
+           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+            BR="${{ steps.prepare_branch.outputs.reuse_branch }}"
+    
+              gh pr create \
+                --base "$TARGET_BRANCH" \
+                --head "$BR" \
+                --title "Cherry-pick: $SOURCE_BRANCH → $TARGET_BRANCH" \
+                --body "PR contains cherry-picked commits from $SOURCE_BRANCH."
