@@ -116,6 +116,12 @@ jobs:
             fi
 #================================================================================
 #================================================================================
+      - name: Set up PAT authentication
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git remote set-url origin https://x-access-token:${{ secrets.MY_TOKEN_CLASSIC }}@github.com/${{ github.repository }}.git
+
       - name: Cherry-pick commits
         run: |
               COMMITS=$(echo '${{ steps.format_commits.outputs.commits_json }}' | jq -r '.[]')
