@@ -122,7 +122,8 @@ jobs:
               for c in $COMMITS; do
                 git cherry-pick "$c" || exit 1
               done
-    
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
       - name: Push branch
         run: |
               git commit --amend -m "Cherry-picked commits [skip ci]" || true
