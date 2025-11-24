@@ -93,6 +93,22 @@ jobs:
             git checkout -b "$REUSE_BRANCH" origin/$TARGET_BRANCH   # <-- FIXED
             git push -u origin "$REUSE_BRANCH"
           fi
+          
+      - name: Check if PR already exists
+        id: check_pr
         env:
-          GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BR="${{ steps.prepare_branch.outputs.reuse_branch }}"
 
+          PR=$(gh pr list \
+              --head "$BR" \
+              --state open \
+              --json number,title,body \
+              --jq '.[0]' || true)
+
+          if [[ -n "$PR" && "$PR" != "null" ]]; then
+            echo "PR already exists:"
+            echo "$PR"
+            exit 1
+          fi
