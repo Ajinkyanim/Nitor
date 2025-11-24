@@ -93,5 +93,6 @@ jobs:
             git checkout -b "$REUSE_BRANCH" origin/$TARGET_BRANCH   # <-- FIXED
             git push -u origin "$REUSE_BRANCH"
           fi
-
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
 
