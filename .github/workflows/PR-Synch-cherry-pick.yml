@@ -4,9 +4,8 @@ on:
   workflow_dispatch:
     inputs:
       commits:
-        description: "Comma-separated commit hashes to cherry-pick"
-        required: true
-        default: ""
+        description: "Comma-separated commit hashes"
+        required: false
 
 env:
   SOURCE_BRANCH: "destination"
