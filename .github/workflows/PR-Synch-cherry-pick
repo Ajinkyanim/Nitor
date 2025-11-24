@@ -1,0 +1,76 @@
+name: Cherry-pick
+
+on:
+  workflow_dispatch:
+    inputs:
+      commits:
+        description: "Comma-separated commit hashes to cherry-pick"
+        required: true
+        default: ""
+
+env:
+  SOURCE_BRANCH: "destination"
+  TARGET_BRANCH: "main"
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Print environment variables
+        run: |
+          echo "SOURCE_BRANCH = $SOURCE_BRANCH"
+          echo "TARGET_BRANCH = $TARGET_BRANCH"
+
+      - name: Print received commits input
+        run: echo "Commits input: '${{ github.event.inputs.commits }}'"
+
+      - name: Format commits (trim spaces, split by comma)
+        id: format_commits
+        run: |
+          INPUT="${{ github.event.inputs.commits }}"
+          if [ -z "$INPUT" ]; then
+            echo "No commits provided."
+            echo '[]' > commits.json
+          else
+            echo "$INPUT" | tr ',' '\n' | sed 's/^[ \t]*//;s/[ \t]*$//' | sed '/^$/d' > cleaned.txt
+            jq -R . cleaned.txt | jq -s . > commits.json
+          fi
+
+          echo "Final cleaned commit list:"
+          cat commits.json
+          echo "commits_json=$(cat commits.json)" >> $GITHUB_OUTPUT
+
+      - name: Validate provided commits exist in SOURCE branch
+        id: validate_commits
+        run: |
+          echo "Validating commits in $SOURCE_BRANCH..."
+          
+          git fetch origin $SOURCE_BRANCH
+          git checkout $SOURCE_BRANCH
+
+          COMMITS_ARRAY=$(echo '${{ steps.format_commits.outputs.commits_json }}' | jq -r '.[]')
+
+          INVALID_COMMITS=()
+
+          for c in $COMMITS_ARRAY; do
+            if git cat-file -e "$c" 2>/dev/null; then
+              echo "✅ Commit exists: $c"
+            else
+              echo "❌ Commit NOT found: $c"
+              INVALID_COMMITS+=("$c")
+            fi
+          done
+
+          if [ ${#INVALID_COMMITS[@]} -ne 0 ]; then
+            echo "❌ Invalid commit(s): ${INVALID_COMMITS[*]}"
+            exit 1
+          else
+            echo "✅ All provided commits are valid in $SOURCE_BRANCH."
+          fi
