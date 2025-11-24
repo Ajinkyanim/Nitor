@@ -53,3 +53,25 @@ jobs:
       
           # Print compact one-line JSON also (optional)
           echo "Compact JSON: $COMPACT"
+
+      - name: Validate commits
+        id: validate_commits
+        run: |
+          git fetch origin $SOURCE_BRANCH
+          git checkout $SOURCE_BRANCH
+
+          COMMITS=$(echo '${{ steps.format_commits.outputs.commits_json }}' | jq -r '.[]')
+          INVALID=()
+
+          for c in $COMMITS; do
+            if git cat-file -e "$c" 2>/dev/null; then
+              echo "OK: $c"
+            else
+              INVALID+=("$c")
+            fi
+          done
+
+          if [ ${#INVALID[@]} -ne 0 ]; then
+            echo "Invalid commits: ${INVALID[*]}"
+            exit 1
+          fi
