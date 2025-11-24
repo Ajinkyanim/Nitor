@@ -27,3 +27,21 @@ jobs:
         run: |
           echo "SOURCE_BRANCH = $SOURCE_BRANCH"
           echo "TARGET_BRANCH = $TARGET_BRANCH"
+      
+      - name: Print received commits input
+        run: |
+          echo "Commits input: '${{ github.event.inputs.commits }}'"
+      
+      - name: Format commits
+        id: format_commits
+        run: |
+          INPUT="${{ github.event.inputs.commits }}"
+          if [ -z "$INPUT" ]; then
+            echo "No commits provided."
+            echo '[]' > commits.json
+          else
+            echo "$INPUT" | tr ',' '\n' | sed 's/^[ \t]*//;s/[ \t]*$//' | sed '/^$/d' > cleaned.txt
+            jq -R . cleaned.txt | jq -s . > commits.json
+          fi
+
+          echo "commits_json=$(cat commits.json)" >> $GITHUB_OUTPUT
