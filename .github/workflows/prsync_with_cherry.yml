@@ -75,3 +75,18 @@ jobs:
             echo "Invalid commits: ${INVALID[*]}"
             exit 1
           fi
+          
+      - name: Prepare reusable branch
+        id: prepare_branch
+        run: |
+          REUSE_BRANCH="cp-${SOURCE_BRANCH}-to-${TARGET_BRANCH}"
+          echo "reuse_branch=$REUSE_BRANCH" >> $GITHUB_OUTPUT
+
+          git fetch origin
+
+          if git ls-remote --exit-code --heads origin "$REUSE_BRANCH" >/dev/null; then
+            git checkout "$REUSE_BRANCH"
+            git reset --hard origin/$TARGET_BRANCH
+          else
+            git checkout -b "$REUSE_BRANCH" origin/$TARGET_BRANCH
+          fi
