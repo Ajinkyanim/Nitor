@@ -81,12 +81,17 @@ jobs:
         run: |
           REUSE_BRANCH="cp-${SOURCE_BRANCH}-to-${TARGET_BRANCH}"
           echo "reuse_branch=$REUSE_BRANCH" >> $GITHUB_OUTPUT
-
+      
           git fetch origin
-
+      
+          # Check if reusable branch already exists on remote
           if git ls-remote --exit-code --heads origin "$REUSE_BRANCH" >/dev/null; then
+            echo "Branch exists. Reusing: $REUSE_BRANCH"
             git checkout "$REUSE_BRANCH"
             git reset --hard origin/$TARGET_BRANCH
           else
-            git checkout -b "$REUSE_BRANCH" origin/$TARGET_BRANCH
+            echo "Branch does not exist. Creating: $REUSE_BRANCH"
+            git checkout -b "$REUSE_BRANCH" origin/$TARGET_BRANCH"
+            git push -u origin "$REUSE_BRANCH"   # <-- REQUIRED
           fi
+
