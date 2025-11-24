@@ -111,4 +111,6 @@ jobs:
             echo "PR already exists:"
             echo "$PR"
             exit 1
-          fi
+             else
+              echo "No existing PR found for branch: $BR"
+            fi
