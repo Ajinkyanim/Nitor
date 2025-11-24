@@ -122,14 +122,40 @@ jobs:
           git config --global user.email "github-actions@github.com"
           git remote set-url origin https://x-access-token:${{ secrets.MY_TOKEN_CLASSIC }}@github.com/${{ github.repository }}.git
 
-      - name: Cherry-pick commits
+      - name: Cherry-pick selected commits
         run: |
-              COMMITS=$(echo '${{ steps.format_commits.outputs.commits_json }}' | jq -r '.[]')
-              for c in $COMMITS; do
-                git cherry-pick "$c" || exit 1
-              done
+          COMMITS=$(echo '${{ steps.format_commits.outputs.commits_json }}' | jq -r '.[]')
+          TARGET="$TARGET_BRANCH"
+
+          echo "Starting cherry-pick..."
+
+          # Switch to our reusable branch
+          git checkout "${{ steps.prepare_branch.outputs.reuse_branch }}"
+
+          for c in $COMMITS; do
+            echo "-----"
+            echo "Checking commit: $c"
+
+            # Compute patch-id of the source commit
+            PATCH_ID_SRC=$(git show "$c" | git patch-id | awk '{print $1}')
+
+            # Check if same patch already exists in target branch
+            if git log origin/$TARGET --patch | git patch-id | grep -q "$PATCH_ID_SRC"; then
+              echo "⚠️  Commit $c already exists in $TARGET. Skipping."
+              continue
+            fi
+
+            echo "Cherry-picking $c ..."
+            git cherry-pick "$c" || {
+              echo "❌ Conflict while cherry-picking $c"
+              exit 1
+            }
+          done
+
+          echo "🎉 Cherry-pick step completed!"
         env:
           GITHUB_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
+          
       - name: Push branch
         run: |
               git commit --amend -m "Cherry-picked commits [skip ci]" || true
