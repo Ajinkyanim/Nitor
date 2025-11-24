@@ -1,4 +1,4 @@
-name: Cherry-pick
+name: PR-Synch-cherry-pick
 
 on:
   workflow_dispatch:
