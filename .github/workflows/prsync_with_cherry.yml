@@ -88,6 +88,8 @@ jobs:
             echo "Branch exists. Reusing: $REUSE_BRANCH"
             git checkout "$REUSE_BRANCH"
             git reset --hard origin/$TARGET_BRANCH
+             echo "Force-pushing reset branch to remote..."
+            git push --force origin "$REUSE_BRANCH"
           else
             echo "Branch does not exist. Creating: $REUSE_BRANCH"
             git checkout -b "$REUSE_BRANCH" origin/$TARGET_BRANCH   # <-- FIXED
