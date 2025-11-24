@@ -87,8 +87,10 @@ jobs:
           if git ls-remote --exit-code --heads origin "$REUSE_BRANCH" >/dev/null; then
             echo "Branch exists. Reusing: $REUSE_BRANCH"
             git checkout "$REUSE_BRANCH"
+            git fetch origin $TARGET_BRANCH
             git reset --hard origin/$TARGET_BRANCH
-             echo "Force-pushing reset branch to remote..."
+            echo "Force-pushing reset branch to remote..."
+            
             git push --force origin "$REUSE_BRANCH"
           else
             echo "Branch does not exist. Creating: $REUSE_BRANCH"
