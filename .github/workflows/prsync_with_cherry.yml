@@ -1,0 +1,14 @@
+name: Cherry-pick - Step 1 (manual input only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      commits:
+        description: "Comma-separated commit hashes to cherry-pick"
+        required: false
+        default: ""
+
+env:
+  SOURCE_BRANCH: "V4.1"
+  TARGET_BRANCH: "V5.0"
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
