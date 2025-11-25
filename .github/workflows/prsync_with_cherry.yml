@@ -114,6 +114,11 @@ jobs:
           if [[ -n "$PR" && "$PR" != "null" ]]; then
             echo "PR already exists:"
             echo "$PR"
+            BODY=$(echo "$PR" | jq -r '.body')
+      
+            echo "=== Commit IDs already present in this PR ==="
+            echo "$BODY"
+            echo "============================================="
             exit 1
              else
               echo "No existing PR found for branch: $BR"
