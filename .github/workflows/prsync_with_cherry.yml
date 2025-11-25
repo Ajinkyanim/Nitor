@@ -168,7 +168,6 @@ jobs:
           
       - name: Push branch
         run: |
-              git commit --amend -m "Cherry-picked commits [skip ci]" || true
               git push --force origin "${{ steps.prepare_branch.outputs.reuse_branch }}"
     
       - name: Create Pull Request
