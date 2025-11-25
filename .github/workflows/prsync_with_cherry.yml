@@ -168,7 +168,7 @@ jobs:
       - name: Create Pull Request
         if: steps.check_pr.outcome == 'success'
         env:
-           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+           GH_TOKEN: ${{ secrets.MY_TOKEN_CLASSIC }}
         run: |
             BR="${{ steps.prepare_branch.outputs.reuse_branch }}"
     
