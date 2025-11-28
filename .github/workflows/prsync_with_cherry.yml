@@ -59,22 +59,45 @@ jobs:
         run: |
           git fetch origin $SOURCE_BRANCH
           git checkout $SOURCE_BRANCH
-
+      
           COMMITS=$(echo '${{ steps.format_commits.outputs.commits_json }}' | jq -r '.[]')
           INVALID=()
-
+          NOT_MERGED=()
+      
           for c in $COMMITS; do
+            # 1. Check commit object exists in repo
             if git cat-file -e "$c" 2>/dev/null; then
-              echo "OK: $c"
+              echo "Commit exists: $c"
             else
+              echo "❌ Commit not found in repo: $c"
               INVALID+=("$c")
+              continue
+            fi
+      
+            # 2. Check commit is part of SOURCE_BRANCH history
+            if git merge-base --is-ancestor "$c" "origin/$SOURCE_BRANCH"; then
+              echo "OK: $c is merged in $SOURCE_BRANCH"
+            else
+              echo "❌ Commit $c exists but is NOT merged in $SOURCE_BRANCH"
+              NOT_MERGED+=("$c")
             fi
           done
-
+      
+          # Fail if any commit is invalid
           if [ ${#INVALID[@]} -ne 0 ]; then
-            echo "Invalid commits: ${INVALID[*]}"
+            echo "❌ Invalid (non-existing) commits: ${INVALID[*]}"
             exit 1
           fi
+      
+          # Fail if commit exists but NOT merged in source branch
+          if [ ${#NOT_MERGED[@]} -ne 0 ]; then
+            echo "❌ Commits exist but are NOT merged into $SOURCE_BRANCH:"
+            for c in "${NOT_MERGED[@]}"; do
+              echo "  - $c"
+            done
+            exit 1
+          fi
+
           
       - name: Prepare reusable branch
         id: prepare_branch
