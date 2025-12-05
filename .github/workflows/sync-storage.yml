@@ -1,8 +1,12 @@
 name: Sync repo → Azure Storage (after PR merge)
-
 on:
-  push:
-    branches: [ main ]     # runs when a PR is merged to main
+  pull_request:
+    types: [closed]
+    branches:
+      - main 
+#on:
+  #push:
+    #branches: [ main ]     # runs when a PR is merged to main
   workflow_dispatch:
     inputs:
       target_env:
