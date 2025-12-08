@@ -11,6 +11,7 @@ on:
 env:
   SOURCE_BRANCH: "destination"
   TARGET_BRANCH: "main"
+  REUSE_BRANCH: "cp-${{ env.SOURCE_BRANCH }}-to-${{ env.TARGET_BRANCH }}"
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
@@ -98,11 +99,43 @@ jobs:
             exit 1
           fi
 
-          
+      - name: Check if PR already exists
+        id: check_pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BR="$REUSE_BRANCH"
+      
+          if git ls-remote --exit-code --heads origin "$BR" >/dev/null; then
+            echo "Branch exists: $BR"
+            echo "Checking if PR already exists"
+      
+            PR=$(gh pr list \
+              --head "$BR" \
+              --state open \
+              --json number,title,body \
+              --jq '.[0]' || true)
+      
+            if [[ -n "$PR" && "$PR" != "null" ]]; then
+              echo "PR already exists:"
+              echo "$PR"
+              BODY=$(echo "$PR" | jq -r '.body')
+      
+              echo "=== Commit IDs already present in this PR ==="
+              echo "$BODY"
+              echo "============================================="
+              exit 1
+            else
+              echo "No existing PR found for branch: $BR"
+            fi
+      
+          else
+            echo "Branch does not exist: $BR"
+          fi
       - name: Prepare reusable branch
         id: prepare_branch
         run: |
-          REUSE_BRANCH="cp-${SOURCE_BRANCH}-to-${TARGET_BRANCH}"
+          REUSE_BRANCH="$REUSE_BRANCH"
           echo "reuse_branch=$REUSE_BRANCH" >> $GITHUB_OUTPUT
       
           git fetch origin
@@ -122,31 +155,7 @@ jobs:
             git push -u origin "$REUSE_BRANCH"
           fi
           
-      - name: Check if PR already exists
-        id: check_pr
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          BR="${{ steps.prepare_branch.outputs.reuse_branch }}"
 
-          PR=$(gh pr list \
-              --head "$BR" \
-              --state open \
-              --json number,title,body \
-              --jq '.[0]' || true)
-
-          if [[ -n "$PR" && "$PR" != "null" ]]; then
-            echo "PR already exists:"
-            echo "$PR"
-            BODY=$(echo "$PR" | jq -r '.body')
-      
-            echo "=== Commit IDs already present in this PR ==="
-            echo "$BODY"
-            echo "============================================="
-            exit 1
-             else
-              echo "No existing PR found for branch: $BR"
-            fi
 #================================================================================
 #================================================================================
       - name: Set up PAT authentication
