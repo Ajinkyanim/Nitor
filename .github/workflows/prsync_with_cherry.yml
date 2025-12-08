@@ -11,7 +11,7 @@ on:
 env:
   SOURCE_BRANCH: "destination"
   TARGET_BRANCH: "main"
-  REUSE_BRANCH: "cp-${{ env.SOURCE_BRANCH }}-to-${{ env.TARGET_BRANCH }}"
+  REUSE_BRANCH: "cp-destination-to-main"
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
