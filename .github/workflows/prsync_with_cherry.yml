@@ -121,9 +121,7 @@ jobs:
               echo "$PR"
               BODY=$(echo "$PR" | jq -r '.body')
       
-              echo "=== Commit IDs already present in this PR ==="
-              echo "$BODY"
-              echo "============================================="
+              echo "=== Please Merge/Close Existing Open PR First Then Run This Pipeline ==="
               exit 1
             else
               echo "No existing PR found for branch: $BR"
