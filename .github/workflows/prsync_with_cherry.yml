@@ -130,6 +130,36 @@ jobs:
           else
             echo "Branch does not exist: $BR"
           fi
+      - name: test 1 craeting branch in sync locally 
+        run: |
+            git fetch origin
+        
+            if git show-ref --verify --quiet "refs/heads/$REUSE_BRANCH"; then
+              git checkout "$REUSE_BRANCH"
+            else
+              git checkout -b "$REUSE_BRANCH" "origin/$TARGET_BRANCH"
+            fi
+            git reset --hard "origin/$TARGET_BRANCH"
+            
+      - name: test 1 --> Pre-check cherry-pick conflicts
+        run: |
+          COMMITS=$(echo '${{ steps.format_commits.outputs.commits_json }}' | jq -r '.[]')
+      
+          git checkout "$REUSE_BRANCH"
+      
+          for c in $COMMITS; do
+            echo "🔍 Checking commit: $c"
+      
+            if git cherry-pick --no-commit "$c"; then
+              echo "✅ No conflict for $c"
+              git cherry-pick --abort || true
+            else
+              echo "❌ Conflict detected in $c"
+              git cherry-pick --abort || true
+              exit 1
+            fi
+          done
+
       - name: Prepare reusable branch
         id: prepare_branch
         run: |
