@@ -188,7 +188,7 @@ jobs:
             fi
 
             echo "Cherry-picking $c ..."
-            git cherry-pick -X theirs "$c" || {
+            git cherry-pick -X ours "$c" || {
               echo "❌ Conflict while cherry-picking $c"
               exit 1
             }
