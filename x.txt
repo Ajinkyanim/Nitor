@@ -1,15 +1,5 @@
-x file from main
-k
-l
+x.txt form destination
 
-i
-i
-i
-i
-o
 
-pp
-pp
-p
 
-p
+ikkk
