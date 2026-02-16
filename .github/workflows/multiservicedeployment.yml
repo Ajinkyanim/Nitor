@@ -84,6 +84,52 @@ jobs:
           validate_input "${{ github.event.inputs.db_services }}" "DB Services"
           validate_input "${{ github.event.inputs.api_services }}" "API Services"
           validate_input "${{ github.event.inputs.web_services }}" "WEB Services"
-          
+
+      # It creates 3 matrix for with proper spaces and validated input [export matrix]
+      - name: Create service matrices
+        id: create_matrices
+        run: |
+          create_matrix () {
+            INPUT_VALUE="$1"
+
+            # Return empty matrix if no input provided
+            if [[ -z "$INPUT_VALUE" ]]; then
+              echo "[]"
+              return
+            fi
+
+            MATRIX_ITEMS=""
+
+            IFS=',' read -ra SERVICES <<< "$INPUT_VALUE"
+            
+            for SERVICE in "${SERVICES[@]}"; do
+                  # Remove leading/trailing spaces
+              SERVICE=$(echo "$SERVICE" | xargs)
+                  # Split service and version
+              NAME=$(echo "$SERVICE" | cut -d':' -f1)
+              VERSION=$(echo "$SERVICE" | cut -d':' -f2)
+                  # Convert service name to lowercase
+              NAME=$(echo "$NAME" | tr '[:upper:]' '[:lower:]')
+              CLEAN_VALUE="${NAME}:${VERSION}"
+              MATRIX_ITEMS+="\"$CLEAN_VALUE\","
+            done
+
+              # Remove trailing comma
+            MATRIX_ITEMS=${MATRIX_ITEMS%,}
+            echo "[$MATRIX_ITEMS]"
+          }
+
+          DB_MATRIX=$(create_matrix "${{ github.event.inputs.db_services }}")
+          API_MATRIX=$(create_matrix "${{ github.event.inputs.api_services }}")
+          WEB_MATRIX=$(create_matrix "${{ github.event.inputs.web_services }}")
+
+          echo "DB Matrix: $DB_MATRIX"
+          echo "API Matrix: $API_MATRIX"
+          echo "WEB Matrix: $WEB_MATRIX"
+
+              # Export outputs
+          echo "db_matrix=$DB_MATRIX" >> $GITHUB_OUTPUT
+          echo "api_matrix=$API_MATRIX" >> $GITHUB_OUTPUT
+          echo "web_matrix=$WEB_MATRIX" >> $GITHUB_OUTPUT
 
     
