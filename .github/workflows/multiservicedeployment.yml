@@ -1,0 +1,89 @@
+name: Multi Service Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Select deployment environment"
+        required: true
+        type: choice
+        options:
+          - dev
+          - dev02
+          - qa
+          - qa02
+          - uat
+          - prod
+          - latam-helix
+          - latam-uat
+          - latam-prod
+          
+      db_services:
+        description: "DB Services (di_db:5.0.123,fund_db:5.0.123)"
+        required: false
+        type: string
+
+      api_services:
+        description: "API Services (scoping:5.0.123,dataimport:5.0.789)"
+        required: false
+        type: string
+
+      web_services:
+        description: "WEB Services (ui:5.0.123,add_in:5.0.789)"
+        required: false
+        type: string
+
+jobs:
+  validate-inputs:
+    runs-on: ubuntu-latest
+
+    steps:
+     # It ensures that at least one service category (DB Services, API Services, or WEB Services) should provide
+      - name: Validate at least one service input provided
+        run: |
+          DB="${{ github.event.inputs.db_services }}"
+          API="${{ github.event.inputs.api_services }}"
+          WEB="${{ github.event.inputs.web_services }}"
+
+          if [[ -z "$DB" && -z "$API" && -z "$WEB" ]]; then
+            echo " ERROR: You must provide at least one service input."
+            echo "Provide DB OR API OR WEB services."
+            exit 1
+          fi
+
+          echo "Input validation passed"
+    # It ensures that at format of input should be proper [serviceName:Version.pr] 
+      - name: Validate service input formats
+        run: |
+          validate_input() {
+            SERVICES_INPUT="$1"
+            INPUT_NAME="$2"
+
+            if [[ -z "$SERVICES_INPUT" ]]; then
+              echo "No $INPUT_NAME provided. Skipping validation."
+              return
+            fi
+
+            echo "Validating $INPUT_NAME..."
+
+            IFS=',' read -ra SERVICES <<< "$SERVICES_INPUT"
+            for SERVICE in "${SERVICES[@]}"; do
+                  # Remove extra spaces
+              SERVICE=$(echo "$SERVICE" | xargs)
+
+                  # Validate format service:X.Y.Z
+              if [[ ! "$SERVICE" =~ ^[a-zA-Z0-9_-]+:[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                echo "❌ Invalid format in $INPUT_NAME -> $SERVICE"
+                echo "Expected format: service_name:X.Y.Z (example: fund_db:5.0.567)"
+                exit 1
+              fi
+            done
+            echo "✅ $INPUT_NAME format validation passed"
+          }
+               # calling above function for 3 kinds of input format service:X.Y.Z
+          validate_input "${{ github.event.inputs.db_services }}" "DB Services"
+          validate_input "${{ github.event.inputs.api_services }}" "API Services"
+          validate_input "${{ github.event.inputs.web_services }}" "WEB Services"
+          
+
+    
