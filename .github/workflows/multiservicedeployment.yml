@@ -36,7 +36,11 @@ on:
 jobs:
   validate-inputs:
     runs-on: ubuntu-latest
-
+    outputs:
+      db_matrix: ${{ steps.create_matrices.outputs.db_matrix }}
+      api_matrix: ${{ steps.create_matrices.outputs.api_matrix }}
+      web_matrix: ${{ steps.create_matrices.outputs.web_matrix }}
+      
     steps:
      # It ensures that at least one service category (DB Services, API Services, or WEB Services) should provide
       - name: Validate at least one service input provided
@@ -132,4 +136,58 @@ jobs:
           echo "api_matrix=$API_MATRIX" >> $GITHUB_OUTPUT
           echo "web_matrix=$WEB_MATRIX" >> $GITHUB_OUTPUT
 
+  api_deployment:
+    name: Trigger API Deployments
+    needs: validate-inputs
+    runs-on: ubuntu-latest
+
+    # Run only if API matrix has values
+    if: ${{ needs.validate-inputs.outputs.api_matrix != '[]' }}
+
+    steps:
+      - name: Authenticate GitHub CLI
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+
+      - name: Trigger API deployment workflows
+        env:
+          ENVIRONMENT: ${{ github.event.inputs.environment }}
+        run: |
+
+          echo "Reading API matrix..."
+          SERVICES='${{ needs.validate-inputs.outputs.api_matrix }}'
+
+          echo "Matrix: $SERVICES"
+
+          # Convert JSON array → iterable list
+          SERVICES=$(echo "$SERVICES" | jq -r '.[]')
+
+          for SERVICE in $SERVICES; do
+
+            # Example input: scoping:5.0.123
+            SERVICE_NAME=$(echo "$SERVICE" | cut -d':' -f1)
+            FULL_VERSION=$(echo "$SERVICE" | cut -d':' -f2)
+
+            # Split version into required parameters
+            VERSION=$(echo "$FULL_VERSION" | cut -d'.' -f1,2)
+            PR_NUMBER=$(echo "$FULL_VERSION" | cut -d'.' -f3)
+
+            echo "--------------------------------"
+            echo "Triggering API Deployment"
+            echo "Service Name : $SERVICE_NAME"
+            echo "Version      : $VERSION"
+            echo "PR Number    : $PR_NUMBER"
+            echo "Environment  : $ENVIRONMENT"
+
+            gh workflow run AKS-Analysis-CD.yml \
+              --ref main \
+              -f environment="$ENVIRONMENT" \
+              -f service_name="$SERVICE_NAME" \
+              -f version="$VERSION" \
+              -f pr_number="$PR_NUMBER"
+
+            echo "Workflow triggered for $SERVICE_NAME"
+
+            # Prevent API throttling
+            sleep 3
+          done
     
